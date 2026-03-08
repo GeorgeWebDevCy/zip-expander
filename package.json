@@ -24,7 +24,10 @@
     "url": "git+https://github.com/GeorgeWebDevCy/zip-expander.git"
   },
   "keywords": [],
-  "author": "George",
+  "author": {
+    "name": "George Nicolaou",
+    "email": "orionas.elite@gmail.com"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/GeorgeWebDevCy/zip-expander/issues"

@@ -10,7 +10,7 @@ Built with Electron + Next.js.
 
 ## Screenshot
 
-![Zip Expander UI](./docs/screenshots/zip-expander-ui.svg)
+![Zip Expander UI](./docs/screenshots/zip-expander-ui.png)
 
 ## What It Does
 

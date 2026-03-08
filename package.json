@@ -10,7 +10,9 @@
     "build:electron": "tsc -p electron/tsconfig.json",
     "build": "npm run build:electron && next build",
     "start": "cross-env NODE_ENV=production electron dist-electron/electron/main.js",
-    "dist": "npm run build && electron-builder --win nsis",
+    "dist": "npm run build && electron-builder --win nsis portable",
+    "dist:installer": "npm run build && electron-builder --win nsis",
+    "dist:portable": "npm run build && electron-builder --win portable",
     "dist:unpacked": "npm run build && electron-builder --win dir",
     "assets:build": "powershell -ExecutionPolicy Bypass -File scripts/build-assets.ps1",
     "fixtures:generate": "tsx tests/fixtures/generate-fixtures.ts",
@@ -22,7 +24,7 @@
     "url": "git+https://github.com/GeorgeWebDevCy/zip-expander.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "George",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/GeorgeWebDevCy/zip-expander/issues"
@@ -64,10 +66,14 @@
     "win": {
       "target": [
         "nsis",
+        "portable",
         "dir"
       ],
       "icon": "icon.ico",
       "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
     },
     "nsis": {
       "oneClick": false,

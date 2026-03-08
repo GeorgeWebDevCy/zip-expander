@@ -50,7 +50,7 @@ const createMainWindow = async (): Promise<void> => {
     minWidth: 980,
     minHeight: 720,
     title: APP_NAME,
-    backgroundColor: "#111017",
+    backgroundColor: "#edf3f8",
     icon: resolveIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -152,4 +152,3 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
-

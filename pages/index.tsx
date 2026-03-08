@@ -21,6 +21,14 @@ const statusLabel: Record<QueueJobState["status"], string> = {
   cancelled: "Cancelled"
 };
 
+const statusClass: Record<QueueJobState["status"], string> = {
+  queued: "status-queued",
+  running: "status-running",
+  completed: "status-completed",
+  failed: "status-failed",
+  cancelled: "status-cancelled"
+};
+
 const applyQueueEvent = (prev: QueueJobState[], event: QueueEvent): QueueJobState[] => {
   if (event.type === "snapshot") {
     return event.jobs;
@@ -40,13 +48,18 @@ const applyQueueEvent = (prev: QueueJobState[], event: QueueEvent): QueueJobStat
   return prev;
 };
 
+const leaf = (value: string): string => {
+  const parts = value.split(/[\\/]/).filter(Boolean);
+  return parts.at(-1) ?? value;
+};
+
 export default function HomePage() {
   const [draft, setDraft] = useState<DraftJob>(initialDraft);
   const [jobs, setJobs] = useState<QueueJobState[]>([]);
   const [queueRunning, setQueueRunning] = useState(false);
   const [passwordRequest, setPasswordRequest] = useState<PasswordRequest | null>(null);
   const [password, setPassword] = useState("");
-  const [notice, setNotice] = useState("Ready.");
+  const [notice, setNotice] = useState("Add your first archive to start.");
   const api = typeof window !== "undefined" ? window.desktopApi : undefined;
 
   useEffect(() => {
@@ -64,7 +77,7 @@ export default function HomePage() {
 
       if (event.type === "queue-started") {
         setQueueRunning(true);
-        setNotice("Queue running...");
+        setNotice("Queue is running.");
       }
 
       if (event.type === "queue-finished") {
@@ -109,26 +122,40 @@ export default function HomePage() {
       nested += job.nestedZipCount;
     }
 
+    const completionRate =
+      jobs.length > 0 ? Math.round((byStatus.completed / jobs.length) * 100) : 0;
+
     return {
       ...byStatus,
       extracted,
       renamed,
       nested,
-      total: jobs.length
+      total: jobs.length,
+      completionRate
     };
   }, [jobs]);
+
+  const activeIllustration =
+    summary.failed > 0
+      ? ILLUSTRATION_PATHS.errorState
+      : summary.running > 0
+        ? ILLUSTRATION_PATHS.processing
+        : ILLUSTRATION_PATHS.emptyQueue;
+
+  const canAdd = Boolean(draft.zipPath && draft.destinationPath);
+  const canStart = jobs.some((job) => job.status === "queued");
 
   const onBrowseZip = async () => {
     if (!api) {
       return;
     }
 
-    const filePath = await api.pickZipFile();
-    if (!filePath) {
+    const selected = await api.pickZipFile();
+    if (!selected) {
       return;
     }
 
-    setDraft((prev) => ({ ...prev, zipPath: filePath }));
+    setDraft((prev) => ({ ...prev, zipPath: selected }));
   };
 
   const onBrowseDestination = async () => {
@@ -136,12 +163,12 @@ export default function HomePage() {
       return;
     }
 
-    const folderPath = await api.pickDestinationFolder();
-    if (!folderPath) {
+    const selected = await api.pickDestinationFolder();
+    if (!selected) {
       return;
     }
 
-    setDraft((prev) => ({ ...prev, destinationPath: folderPath }));
+    setDraft((prev) => ({ ...prev, destinationPath: selected }));
   };
 
   const onAddJob = async () => {
@@ -149,22 +176,20 @@ export default function HomePage() {
       return;
     }
 
-    if (!draft.zipPath || !draft.destinationPath) {
-      setNotice("Select both ZIP path and destination path.");
+    if (!canAdd) {
+      setNotice("Pick both ZIP and destination.");
       return;
     }
 
-    const id = crypto.randomUUID();
     await api.queueAdd({
-      id,
+      id: crypto.randomUUID(),
       zipPath: draft.zipPath,
       destinationPath: draft.destinationPath
     });
 
-    const snapshot = await api.queueList();
-    setJobs(snapshot);
+    setJobs(await api.queueList());
     setDraft((prev) => ({ ...prev, zipPath: "" }));
-    setNotice("Job added to queue.");
+    setNotice("Job queued.");
   };
 
   const onRemoveJob = async (jobId: string) => {
@@ -174,12 +199,11 @@ export default function HomePage() {
 
     const removed = await api.queueRemove(jobId);
     if (!removed) {
-      setNotice("Could not remove that job (it may be running).");
+      setNotice("Cannot remove running job.");
       return;
     }
 
-    const snapshot = await api.queueList();
-    setJobs(snapshot);
+    setJobs(await api.queueList());
     setNotice("Job removed.");
   };
 
@@ -188,7 +212,7 @@ export default function HomePage() {
       return;
     }
 
-    if (jobs.filter((job) => job.status === "queued").length === 0) {
+    if (!canStart) {
       setNotice("No queued jobs.");
       return;
     }
@@ -202,15 +226,11 @@ export default function HomePage() {
     }
 
     await api.queueCancel();
-    setNotice("Cancellation requested...");
+    setNotice("Cancellation requested.");
   };
 
   const onSubmitPassword = async () => {
-    if (!api || !passwordRequest) {
-      return;
-    }
-
-    if (!password) {
+    if (!api || !passwordRequest || !password) {
       return;
     }
 
@@ -232,7 +252,7 @@ export default function HomePage() {
     await api.cancelPassword(passwordRequest.requestId);
     setPasswordRequest(null);
     setPassword("");
-    setNotice("Password request cancelled.");
+    setNotice("Password prompt cancelled.");
   };
 
   return (
@@ -240,23 +260,44 @@ export default function HomePage() {
       <Head>
         <title>Zip Expander</title>
       </Head>
-      <main className="layout">
-        <section className="panel composer">
-          <h1>Zip Expander</h1>
-          <p>
-            Queue one or more ZIP files. Each job extracts recursively and flattens files into
-            destination root.
-          </p>
-
-          {!api && (
-            <div className="warning">
-              Desktop API unavailable. Open this page through Electron instead of a normal browser.
+      <main className="studio">
+        <section className="hero">
+          <div className="hero-copy">
+            <p className="eyebrow">Windows ZIP Workspace</p>
+            <h1>Zip Expander</h1>
+            <p>
+              Build extraction batches, flatten all nested content into destination root, and track
+              every job in one interface.
+            </p>
+            <div className="chip-row">
+              <span className={`chip ${queueRunning ? "chip-live" : "chip-idle"}`}>
+                {queueRunning ? "Queue Active" : "Queue Idle"}
+              </span>
+              <span className="chip">Queued {summary.queued}</span>
+              <span className="chip">Done {summary.completed}</span>
+              <span className="chip">Rate {summary.completionRate}%</span>
             </div>
-          )}
+          </div>
+          <div className="hero-art" aria-hidden="true">
+            <img src={activeIllustration} alt="" />
+          </div>
+        </section>
 
-          <div className="field-grid">
-            <label>
-              ZIP file
+        <section className="workspace">
+          <article className="panel compose-panel">
+            <div className="panel-top">
+              <h2>New Job</h2>
+              <p>Select archive and destination.</p>
+            </div>
+
+            {!api && (
+              <div className="warning">
+                Desktop API unavailable. Open this page via the Electron desktop app.
+              </div>
+            )}
+
+            <label className="field">
+              <span>ZIP file</span>
               <div className="input-row">
                 <input
                   value={draft.zipPath}
@@ -266,15 +307,16 @@ export default function HomePage() {
                       zipPath: event.currentTarget.value
                     }))
                   }
-                  placeholder="C:\\path\\archive.zip"
+                  placeholder="C:\\archives\\package.zip"
                 />
-                <button onClick={onBrowseZip} type="button">
+                <button type="button" onClick={onBrowseZip}>
                   Browse
                 </button>
               </div>
             </label>
-            <label>
-              Destination folder
+
+            <label className="field">
+              <span>Destination root</span>
               <div className="input-row">
                 <input
                   value={draft.destinationPath}
@@ -284,147 +326,179 @@ export default function HomePage() {
                       destinationPath: event.currentTarget.value
                     }))
                   }
-                  placeholder="C:\\path\\destination"
+                  placeholder="D:\\output"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      void onAddJob();
+                    }
+                  }}
                 />
-                <button onClick={onBrowseDestination} type="button">
+                <button type="button" onClick={onBrowseDestination}>
                   Browse
                 </button>
               </div>
             </label>
-          </div>
 
-          <div className="actions">
-            <button onClick={onAddJob} type="button" className="primary">
-              Add to Queue
-            </button>
-            <button onClick={onStartQueue} type="button" disabled={queueRunning}>
-              Start Queue
-            </button>
-            <button onClick={onCancelQueue} type="button" disabled={!queueRunning}>
-              Cancel Queue
-            </button>
-          </div>
+            <div className="action-row">
+              <button type="button" className="primary" onClick={onAddJob} disabled={!canAdd}>
+                Add To Queue
+              </button>
+              <button type="button" onClick={onStartQueue} disabled={queueRunning || !canStart}>
+                Start Queue
+              </button>
+              <button type="button" onClick={onCancelQueue} disabled={!queueRunning}>
+                Cancel
+              </button>
+            </div>
 
-          <div className="notice">{notice}</div>
-        </section>
+            <div className="notice">
+              <span>Notice</span>
+              <p>{notice}</p>
+            </div>
+          </article>
 
-        <section className="panel queue">
-          <header>
-            <h2>Job Queue</h2>
-            <span>{summary.total} jobs</span>
-          </header>
+          <article className="panel queue-panel">
+            <div className="panel-top">
+              <h2>Job Queue</h2>
+              <p>{summary.total} total jobs</p>
+            </div>
 
-          {jobs.length === 0 ? (
-            <div className="empty-state">
-              <img src={ILLUSTRATION_PATHS.emptyQueue} alt="" />
-              <p>No jobs queued yet.</p>
-            </div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ZIP</th>
-                    <th>Destination</th>
-                    <th>Status</th>
-                    <th>Progress</th>
-                    <th>Report</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((job) => (
-                    <tr key={job.id}>
-                      <td title={job.zipPath}>{job.zipPath}</td>
-                      <td title={job.destinationPath}>{job.destinationPath}</td>
-                      <td className={`status ${job.status}`}>{statusLabel[job.status]}</td>
-                      <td>
-                        <div className={`progress ${job.status === "running" ? "running" : ""}`}>
-                          <div style={{ width: `${job.progressPct}%` }} />
-                        </div>
-                        <small>{job.message ?? "-"}</small>
-                      </td>
-                      <td title={job.reportPath}>{job.reportPath ? "Saved" : "-"}</td>
-                      <td>
-                        <button
-                          type="button"
-                          onClick={() => onRemoveJob(job.id)}
-                          disabled={job.status === "running"}
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+            {jobs.length === 0 ? (
+              <div className="empty-state">
+                <img src={ILLUSTRATION_PATHS.emptyQueue} alt="" />
+                <h3>No jobs yet</h3>
+                <p>Create your first extraction job from the left panel.</p>
+              </div>
+            ) : (
+              <ul className="job-list">
+                {jobs.map((job) => (
+                  <li key={job.id} className={`job-card ${statusClass[job.status]}`}>
+                    <div className="job-head">
+                      <div>
+                        <h3>{leaf(job.zipPath)}</h3>
+                        <p title={job.zipPath}>{job.zipPath}</p>
+                      </div>
+                      <span className={`status-pill ${statusClass[job.status]}`}>
+                        {statusLabel[job.status]}
+                      </span>
+                    </div>
 
-        <section className="panel summary">
-          <h2>Summary</h2>
-          <div className="summary-grid">
-            <div>
-              <span>Queued</span>
-              <strong>{summary.queued}</strong>
+                    <div className="job-destination" title={job.destinationPath}>
+                      Destination: {job.destinationPath}
+                    </div>
+
+                    <div className={`progress ${job.status === "running" ? "running" : ""}`}>
+                      <span style={{ width: `${Math.max(2, job.progressPct)}%` }} />
+                    </div>
+
+                    <div className="job-meta">
+                      <p>{job.message ?? "-"}</p>
+                      <div className="kpis">
+                        <span>Files {job.extractedCount}</span>
+                        <span>Renamed {job.renamedCount}</span>
+                        <span>Nested {job.nestedZipCount}</span>
+                        <span>{job.reportPath ? "Report Ready" : "Report Pending"}</span>
+                      </div>
+                    </div>
+
+                    <div className="job-actions">
+                      <button
+                        type="button"
+                        onClick={() => onRemoveJob(job.id)}
+                        disabled={job.status === "running"}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </article>
+
+          <article className="panel metrics-panel">
+            <div className="panel-top">
+              <h2>Queue Insights</h2>
+              <p>Live counters from all jobs.</p>
             </div>
-            <div>
-              <span>Running</span>
-              <strong>{summary.running}</strong>
+
+            <div className="metric-grid">
+              <div>
+                <span>Queued</span>
+                <strong>{summary.queued}</strong>
+              </div>
+              <div>
+                <span>Running</span>
+                <strong>{summary.running}</strong>
+              </div>
+              <div>
+                <span>Completed</span>
+                <strong>{summary.completed}</strong>
+              </div>
+              <div>
+                <span>Failed</span>
+                <strong>{summary.failed}</strong>
+              </div>
+              <div>
+                <span>Cancelled</span>
+                <strong>{summary.cancelled}</strong>
+              </div>
+              <div>
+                <span>Files</span>
+                <strong>{summary.extracted}</strong>
+              </div>
+              <div>
+                <span>Renamed</span>
+                <strong>{summary.renamed}</strong>
+              </div>
+              <div>
+                <span>Nested ZIPs</span>
+                <strong>{summary.nested}</strong>
+              </div>
             </div>
-            <div>
-              <span>Completed</span>
-              <strong>{summary.completed}</strong>
+
+            <div className="completion-box">
+              <div className="completion-head">
+                <span>Completion</span>
+                <strong>{summary.completionRate}%</strong>
+              </div>
+              <div className="completion-track">
+                <span style={{ width: `${summary.completionRate}%` }} />
+              </div>
             </div>
-            <div>
-              <span>Failed</span>
-              <strong>{summary.failed}</strong>
-            </div>
-            <div>
-              <span>Cancelled</span>
-              <strong>{summary.cancelled}</strong>
-            </div>
-            <div>
-              <span>Extracted Files</span>
-              <strong>{summary.extracted}</strong>
-            </div>
-            <div>
-              <span>Renamed Collisions</span>
-              <strong>{summary.renamed}</strong>
-            </div>
-            <div>
-              <span>Nested ZIPs</span>
-              <strong>{summary.nested}</strong>
-            </div>
-          </div>
+          </article>
         </section>
       </main>
 
       {passwordRequest && (
         <div className="modal-backdrop">
           <div className="modal">
+            <p className="eyebrow">Encrypted Archive</p>
             <h3>Password Required</h3>
             <p>
-              Encrypted archive detected for job <code>{passwordRequest.jobId}</code>.
+              Job <code>{passwordRequest.jobId}</code> needs a password.
             </p>
-            <p>
-              Attempt {passwordRequest.attempt} of 3 for:
-              <br />
-              <code>{passwordRequest.archivePath}</code>
+            <p title={passwordRequest.archivePath}>
+              Archive: <code>{passwordRequest.archivePath}</code>
             </p>
+            <p>Attempt {passwordRequest.attempt} of 3.</p>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.currentTarget.value)}
-              placeholder="Enter archive password"
+              placeholder="Enter ZIP password"
               autoFocus
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void onSubmitPassword();
+                }
+              }}
             />
             <div className="modal-actions">
-              <button onClick={onSubmitPassword} type="button" className="primary">
-                Submit
+              <button type="button" className="primary" onClick={onSubmitPassword}>
+                Submit Password
               </button>
-              <button onClick={onCancelPassword} type="button">
+              <button type="button" onClick={onCancelPassword}>
                 Cancel
               </button>
             </div>
@@ -434,3 +508,4 @@ export default function HomePage() {
     </>
   );
 }
+

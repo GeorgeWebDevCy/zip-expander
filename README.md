@@ -1,8 +1,16 @@
 # Zip Expander
 
+[![Version](https://img.shields.io/github/v/release/GeorgeWebDevCy/zip-expander?display_name=tag&style=for-the-badge&label=Version)](https://github.com/GeorgeWebDevCy/zip-expander/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-1f6feb?style=for-the-badge)](https://github.com/GeorgeWebDevCy/zip-expander/releases)
+[![License](https://img.shields.io/badge/License-ISC-0f172a?style=for-the-badge)](./package.json)
+
 Zip Expander is a Windows desktop app that extracts a ZIP archive into a destination folder root, even when content is buried in deep folders or nested ZIP files.
 
 Built with Electron + Next.js.
+
+## Screenshot
+
+![Zip Expander UI](./docs/screenshots/zip-expander-ui.svg)
 
 ## What It Does
 

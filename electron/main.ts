@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { APP_NAME } from "../src/shared/constants";
@@ -9,9 +10,24 @@ let mainWindow: BrowserWindow | null = null;
 
 const pendingPasswordRequests = new Map<string, (password: string | null) => void>();
 
+const pickFirstExistingPath = (candidates: string[]): string | null => {
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+};
+
 const resolveIconPath = (): string => {
-  const root = app.isPackaged ? process.resourcesPath : process.cwd();
-  return path.join(root, "assets", "brand", "icon.ico");
+  const iconPath = pickFirstExistingPath([
+    path.join(process.resourcesPath, "assets", "brand", "icon.ico"),
+    path.join(app.getAppPath(), "assets", "brand", "icon.ico"),
+    path.join(process.cwd(), "assets", "brand", "icon.ico")
+  ]);
+
+  return iconPath ?? path.join(process.cwd(), "assets", "brand", "icon.ico");
 };
 
 const sendQueueEvent = (event: QueueEvent): void => {
@@ -43,6 +59,19 @@ const queueManager = new QueueManager({
   requestPassword
 });
 
+const resolveRendererIndexPath = (): string | null => {
+  if (!app.isPackaged) {
+    return path.join(process.cwd(), "out", "index.html");
+  }
+
+  return pickFirstExistingPath([
+    path.join(app.getAppPath(), "out", "index.html"),
+    path.join(process.resourcesPath, "app.asar", "out", "index.html"),
+    path.join(process.resourcesPath, "out", "index.html"),
+    path.join(process.cwd(), "out", "index.html")
+  ]);
+};
+
 const createMainWindow = async (): Promise<void> => {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -65,8 +94,29 @@ const createMainWindow = async (): Promise<void> => {
     return;
   }
 
-  const indexPath = path.join(process.cwd(), "out", "index.html");
-  await mainWindow.loadFile(indexPath);
+  const indexPath = resolveRendererIndexPath();
+
+  if (!indexPath) {
+    await mainWindow.loadURL(
+      "data:text/html;charset=utf-8," +
+        encodeURIComponent(
+          "<h2>Zip Expander</h2><p>Renderer files were not found.</p><p>Please reinstall the app.</p>"
+        )
+    );
+    return;
+  }
+
+  try {
+    await mainWindow.loadFile(indexPath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown renderer load error.";
+    await mainWindow.loadURL(
+      "data:text/html;charset=utf-8," +
+        encodeURIComponent(
+          `<h2>Zip Expander</h2><p>Failed to load UI.</p><pre>${message}</pre><p>Path: ${indexPath}</p>`
+        )
+    );
+  }
 };
 
 const registerIpc = (): void => {

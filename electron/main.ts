@@ -88,6 +88,9 @@ const createMainWindow = async (): Promise<void> => {
     }
   });
 
+  // Always start maximized on desktop launch.
+  mainWindow.maximize();
+
   if (process.env.NODE_ENV === "development" && process.env.ELECTRON_RENDERER_URL) {
     await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
     mainWindow.webContents.openDevTools({ mode: "detach" });

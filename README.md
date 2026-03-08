@@ -42,12 +42,12 @@ If names collide, files are auto-renamed safely:
 
 Latest release:
 
-- https://github.com/GeorgeWebDevCy/zip-expander/releases/tag/v1.0.0
+- https://github.com/GeorgeWebDevCy/zip-expander/releases/latest
 
 Artifacts include:
 
-- `Zip.Expander.Setup.1.0.0.exe` (installer)
-- `Zip.Expander-1.0.0-portable.exe` (portable)
+- `Zip.Expander.Setup.<version>.exe` (installer)
+- `Zip.Expander-<version>-portable.exe` (portable)
 
 ## How To Use
 

@@ -1,0 +1,82 @@
+{
+  "name": "zip-expander",
+  "version": "0.1.0",
+  "description": "Windows desktop app that flattens nested zip contents into destination root.",
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:next\" \"npm:dev:electron\"",
+    "dev:next": "next dev -p 3000",
+    "dev:electron": "npm run build:electron && wait-on tcp:3000 && cross-env NODE_ENV=development ELECTRON_RENDERER_URL=http://localhost:3000 electron dist-electron/electron/main.js",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build": "npm run build:electron && next build",
+    "start": "cross-env NODE_ENV=production electron dist-electron/electron/main.js",
+    "dist": "npm run build && electron-builder --win nsis",
+    "dist:unpacked": "npm run build && electron-builder --win dir",
+    "assets:build": "powershell -ExecutionPolicy Bypass -File scripts/build-assets.ps1",
+    "fixtures:generate": "tsx tests/fixtures/generate-fixtures.ts",
+    "smoke:test": "tsx scripts/smoke-test.ts",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GeorgeWebDevCy/zip-expander.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GeorgeWebDevCy/zip-expander/issues"
+  },
+  "homepage": "https://github.com/GeorgeWebDevCy/zip-expander#readme",
+  "dependencies": {
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^40.8.0",
+    "electron-builder": "^26.8.1",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.1.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.zipexpander.app",
+    "productName": "Zip Expander",
+    "files": [
+      "dist-electron/**/*",
+      "out/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets/brand",
+      "output": "release"
+    },
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "dir"
+      ],
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeader": "nsis-installer-header.bmp",
+      "installerSidebar": "nsis-installer-sidebar.bmp",
+      "uninstallerSidebar": "nsis-uninstaller-sidebar.bmp"
+    }
+  }
+}

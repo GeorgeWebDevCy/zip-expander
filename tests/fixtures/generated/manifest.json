@@ -1,0 +1,11 @@
+{
+  "encryptedPassword": "Secret123",
+  "fixtures": [
+    "nested-depth.zip",
+    "duplicate-names.zip",
+    "nested-zip.zip",
+    "encrypted.zip",
+    "symlink-entry.zip",
+    "limit-threshold.zip"
+  ]
+}

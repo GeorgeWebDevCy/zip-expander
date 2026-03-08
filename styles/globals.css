@@ -1,0 +1,317 @@
+:root {
+  --bg: #0f0d14;
+  --panel: #1a1522;
+  --panel-2: #221d2b;
+  --muted: #a79dba;
+  --text: #f5f3ff;
+  --primary: #5ad7b3;
+  --danger: #ff6b7a;
+  --warning: #f9bb64;
+  --border: #342d46;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__next {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "Noto Sans", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(90, 215, 179, 0.16), transparent 34%),
+    radial-gradient(circle at 92% 10%, rgba(250, 187, 100, 0.13), transparent 28%),
+    var(--bg);
+  color: var(--text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.15fr 2fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+  padding: 16px;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(34, 29, 43, 0.95), rgba(26, 21, 34, 0.96));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.composer {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+}
+
+.composer h1 {
+  margin: 0 0 6px 0;
+  font-size: 28px;
+}
+
+.composer p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.field-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #16121f;
+  color: var(--text);
+}
+
+button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #2d2641;
+  color: var(--text);
+  padding: 9px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button.primary {
+  background: var(--primary);
+  color: #042f23;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notice {
+  margin-top: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--muted);
+  min-height: 42px;
+}
+
+.warning {
+  margin-top: 12px;
+  border: 1px solid rgba(249, 187, 100, 0.6);
+  color: #ffe8c1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(249, 187, 100, 0.12);
+}
+
+.queue {
+  overflow: hidden;
+}
+
+.queue header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.queue h2,
+.summary h2 {
+  margin: 0 0 10px 0;
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: 52vh;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 8px;
+  font-size: 13px;
+}
+
+th {
+  color: var(--muted);
+  position: sticky;
+  top: 0;
+  background: #211b2f;
+}
+
+td {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  font-weight: 600;
+}
+
+.status.completed {
+  color: var(--primary);
+}
+
+.status.failed {
+  color: var(--danger);
+}
+
+.status.cancelled {
+  color: var(--warning);
+}
+
+.progress {
+  height: 7px;
+  background: #17131f;
+  border-radius: 999px;
+  border: 1px solid #2f2741;
+  overflow: hidden;
+}
+
+.progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, #5ad7b3, #7ee6c7);
+  transition: width 0.28s ease;
+}
+
+.progress.running > div {
+  background: linear-gradient(90deg, #5ad7b3, #86d6ff);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.summary-grid > div {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.summary-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.summary-grid strong {
+  font-size: 22px;
+}
+
+.empty-state {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state img {
+  width: 170px;
+  max-width: 100%;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 4, 13, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal {
+  width: min(460px, 95vw);
+  background: #1e1828;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.modal h3 {
+  margin: 0 0 8px 0;
+}
+
+.modal p {
+  color: var(--muted);
+}
+
+.modal code {
+  color: var(--text);
+}
+
+.modal input {
+  margin-top: 6px;
+}
+
+.modal-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .composer {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+

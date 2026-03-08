@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+dist-electron/
+release/
+coverage/
+*.log
+tests/fixtures/generated/*.zip
+tests/fixtures/generated/*.txt
+

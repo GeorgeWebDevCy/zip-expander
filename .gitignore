@@ -7,4 +7,4 @@ coverage/
 *.log
 tests/fixtures/generated/*.zip
 tests/fixtures/generated/*.txt
-
+tests/fixtures/smoke-output/

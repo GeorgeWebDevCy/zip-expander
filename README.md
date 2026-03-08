@@ -76,6 +76,27 @@ If these values are not configured, the workflow still publishes unsigned artifa
 - Windows SmartScreen reputation is still reputation-based, so a new app can show warnings at first even when signed.
 - As of August 2024, Microsoft removed the special EV certificate requirement from its root program requirements, but reputation buildup still matters in practice.
 
+### SmartScreen Walkthrough (How To Proceed)
+
+Only do this for builds you downloaded from this repository's official Releases page.
+
+1. When "Windows protected your PC" appears, click `More info`.
+
+![SmartScreen Step 1 - More info](./docs/screenshots/smartscreen-step-1-more-info.png)
+
+2. Review app name/source and click `Run anyway`.
+
+![SmartScreen Step 2 - Run anyway](./docs/screenshots/smartscreen-step-2-run-anyway.png)
+
+3. If Windows still blocks launch, right-click the EXE -> `Properties` -> check `Unblock` -> `Apply`, then run again.
+
+![SmartScreen Step 3 - Unblock in Properties](./docs/screenshots/smartscreen-step-3-unblock-properties.png)
+
+Screenshot sources:
+
+- https://www.vovsoft.com/blog/how-to-fix-windows-protected-your-pc/
+- https://winaero.com/how-to-unblock-files-downloaded-from-internet-in-windows-10/
+
 ## How To Use
 
 1. Open Zip Expander.

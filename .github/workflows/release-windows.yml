@@ -1,0 +1,118 @@
+name: release-windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      unsigned_artifact_id: ${{ steps.upload_unsigned.outputs.artifact-id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows artifacts
+        run: npm run dist
+
+      - name: Upload unsigned artifacts
+        id: upload_unsigned
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-unsigned
+          path: release/*.exe
+          if-no-files-found: error
+
+  sign:
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      signed_available: ${{ steps.signing_config.outputs.ready }}
+    steps:
+      - name: Check SignPath configuration
+        id: signing_config
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+        run: |
+          if [ -n "$SIGNPATH_API_TOKEN" ] && [ -n "$SIGNPATH_ORGANIZATION_ID" ] && [ -n "$SIGNPATH_PROJECT_SLUG" ] && [ -n "$SIGNPATH_SIGNING_POLICY_SLUG" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "SignPath configuration detected."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "SignPath configuration missing. Release will publish unsigned artifacts."
+          fi
+
+      - name: Submit signing request to SignPath
+        if: steps.signing_config.outputs.ready == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ needs.build.outputs.unsigned_artifact_id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-artifacts
+
+      - name: Upload signed artifacts
+        if: steps.signing_config.outputs.ready == 'true'
+        uses: actions/upload-artifact@v5
+        with:
+          name: windows-signed
+          path: signed-artifacts/**/*.exe
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - sign
+    steps:
+      - name: Download signed artifacts
+        if: needs.sign.outputs.signed_available == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-signed
+          path: release-assets
+
+      - name: Download unsigned artifacts
+        if: needs.sign.outputs.signed_available != 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-unsigned
+          path: release-assets
+
+      - name: Publish GitHub release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists. Updating assets."
+          else
+            gh release create "$tag" \
+              --title "Zip Expander $version" \
+              --notes "Automated Windows release for Zip Expander $version."
+          fi
+
+          gh release upload "$tag" release-assets/*.exe --clobber

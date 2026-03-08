@@ -49,6 +49,33 @@ Artifacts include:
 - `Zip.Expander.Setup.<version>.exe` (installer)
 - `Zip.Expander-<version>-portable.exe` (portable)
 
+## Code Signing (Free Option)
+
+To reduce SmartScreen friction without paying for a commercial certificate, this repo now includes a GitHub Actions workflow:
+
+- `.github/workflows/release-windows.yml`
+
+It supports free signing through SignPath Foundation for open-source projects.
+
+### One-Time Setup
+
+1. Apply for SignPath Foundation at:
+   https://about.signpath.io/
+2. In your GitHub repo, add:
+   - Repository secret: `SIGNPATH_API_TOKEN`
+   - Repository variables:
+     - `SIGNPATH_ORGANIZATION_ID`
+     - `SIGNPATH_PROJECT_SLUG`
+     - `SIGNPATH_SIGNING_POLICY_SLUG`
+3. Push a tag like `v1.0.2` to trigger the workflow.
+
+If these values are not configured, the workflow still publishes unsigned artifacts.
+
+### SmartScreen Reality Check
+
+- Windows SmartScreen reputation is still reputation-based, so a new app can show warnings at first even when signed.
+- As of August 2024, Microsoft removed the special EV certificate requirement from its root program requirements, but reputation buildup still matters in practice.
+
 ## How To Use
 
 1. Open Zip Expander.

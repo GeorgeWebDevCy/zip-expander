@@ -1,0 +1,21 @@
+{
+  "jobId": "smoke-9e3aea23-3360-4592-b597-bcc854049ce9",
+  "zipPath": "C:\\Github Projects\\zip-expander\\tests\\fixtures\\generated\\nested-zip.zip",
+  "destinationPath": "C:\\Github Projects\\zip-expander\\tests\\fixtures\\smoke-output\\nested-zip-1772928429847",
+  "status": "completed",
+  "startedAt": "2026-03-08T00:07:09.850Z",
+  "finishedAt": "2026-03-08T00:07:10.130Z",
+  "durationMs": 280,
+  "extractedCount": 7,
+  "renamedCount": 3,
+  "nestedZipCount": 2,
+  "totalExtractedBytes": 45,
+  "skipped": [],
+  "errors": [],
+  "limits": {
+    "maxDepth": 12,
+    "maxFiles": 100000,
+    "maxTotalBytes": 21474836480,
+    "maxSingleFileBytes": 2147483648
+  }
+}
